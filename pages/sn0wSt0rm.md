@@ -1,4 +1,4 @@
-![Alt text](resources/Sn0wSt0rm.png "Optional title")
+![Alt text](../resources/Sn0wSt0rm.png "Optional title")
 
 
 Sn0wst0rm is built to process and "grind" data.
