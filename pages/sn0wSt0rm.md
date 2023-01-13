@@ -303,6 +303,7 @@ Now we have a base configuration that can be used by every step, and it looks li
 
 ```
 {:name "tweet-importer"
+ :await-termination-time 2000
  :tx {:fail-fast? false
       :clean-up-fn (fn [a b] (clojure.tools.logging/info "Transaction cleaned!"))
       :retries 2}
@@ -317,6 +318,8 @@ Now we have a base configuration that can be used by every step, and it looks li
 ```
 
 - `:name` - the name of the step;
+- `:await-termination-time` - when stopping the system, this is the time (ms) the step executor will wait for all tasks to finish,
+if this value is not provided, it will default to 1000 (ms).
 - `tx` - the transactional configuration, it contains the following:
     - `:fail-fast?` - whether or not the system should be shutdown if an exception is detected while executing this step's function.
     - `:retries` - the number of times a failure should be retried before continuing on to the next execution.
