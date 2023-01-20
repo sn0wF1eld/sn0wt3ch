@@ -11,7 +11,7 @@ Receive data from anywhere, process it, and store it however and wherever you wa
 Go to docker directory in sn0wst0rm project and execute:
 
 ```
-./run-version.sh --version 1.0.0-alpha --maxHeap 4G --minHeap 2G --config /path/to/config.edn --library /path/to/library.jar --env production
+./run-version.sh --version 1.0.0-alpha --gc Parallel --maxHeap 4G --minHeap 2G --config /path/to/config.edn --library /path/to/library.jar --env production 
 ```
 
 ## Direct jar execution
@@ -19,13 +19,13 @@ Go to docker directory in sn0wst0rm project and execute:
 Go to the scripts folder and use:
 
 ```
-./grind.sh --maxHeap 4G --minHeap 2G --baseLibrary /path/to/sn0wst0rm/jar --config /path/to/config.edn --library /path/to/library.jar
+./grind.sh --gc Parallel --maxHeap 4G --minHeap 2G --baseLibrary /path/to/sn0wst0rm/jar --config /path/to/config.edn --library /path/to/library.jar
 ```
 
 If you want to debug the pipeline, use:
 
 ```
-./grind-debug.sh --maxHeap 4G --minHeap 2G --baseLibrary /path/to/sn0wst0rm/jar --config /path/to/config.edn --library /path/to/library.jar
+./grind-debug.sh --gc Parallel --maxHeap 4G --minHeap 2G --baseLibrary /path/to/sn0wst0rm/jar --config /path/to/config.edn --library /path/to/library.jar
 ```
 
 ## Summary

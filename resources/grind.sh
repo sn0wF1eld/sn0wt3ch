@@ -4,7 +4,8 @@ version=${version:-"latest"}
 config=${config}
 baseLibrary=${baseLibrary}
 library=${library}
-maxHeap=${maxHeap:-"4G"}
+gc=${gc:-"G1"}
+maxHeap=${maxHeap:-"2G"}
 minHeap=${minHeap:-"2G"}
 
 while [ $# -gt 0 ]; do
@@ -31,7 +32,7 @@ fi
 if [ ! -z "$library" ]
 then
   cp  $library $BASEDIR/extra-library.jar
-  java --enable-preview "-Xmx$maxHeap" "-Xms$minHeap" -cp sn0wst0rm-standalone.jar:extra-library.jar sn0wst0rm.core
+  java --enable-preview "-XX:+Use"$gc"GC" "-Xmx$maxHeap" "-Xms$minHeap" -cp sn0wst0rm-standalone.jar:extra-library.jar sn0wst0rm.core
 else
-  java --enable-preview "-Xmx$maxHeap" "-Xms$minHeap" -cp sn0wst0rm-standalone.jar sn0wst0rm.core
+  java --enable-preview "-XX:+Use"$gc"GC" "-Xmx$maxHeap" "-Xms$minHeap" -cp sn0wst0rm-standalone.jar sn0wst0rm.core
 fi
