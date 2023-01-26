@@ -304,6 +304,8 @@ Now we have a base configuration that can be used by every step, and it looks li
 ```
 {:name "tweet-importer"
  :await-termination-time 2000
+ :editable true
+ :batch-size 100
  :tx {:fail-fast? false
       :clean-up-fn (fn [a b] (clojure.tools.logging/info "Transaction cleaned!"))
       :retries 2}
@@ -320,8 +322,11 @@ Now we have a base configuration that can be used by every step, and it looks li
 - `:name` - the name of the step;
 - `:await-termination-time` - when stopping the system, this is the time (ms) the step executor will wait for all tasks to finish,
 if this value is not provided, it will default to 1000 (ms).
+- `:editable` - whether the value that has failed to be processed by this step, is or not editable from the UI (defaults to false);
+- `:batch-size` - batch processing is now enabled in the system, set this value to a specific number to set the batch size. 
+No key added, will make the system default to single shard processing;
 - `tx` - the transactional configuration, it contains the following:
-    - `:fail-fast?` - whether or not the system should be shutdown if an exception is detected while executing this step's function.
+    - `:fail-fast?` - whether  the system should be shutdown if an exception is detected while executing this step's function.
     - `:retries` - the number of times a failure should be retried before continuing on to the next execution.
     - `clean-up-fn` - the function that will be executed once the transaction is finished. This can be a function to move a file,
       to a different place, change the status of an object in the db, etc.
