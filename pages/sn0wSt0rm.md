@@ -1,6 +1,5 @@
 ![Alt text](../resources/Sn0wSt0rm.png "Optional title")
 
-
 Sn0wst0rm is built to process and "grind" data.
 Receive data from anywhere, process it, and store it however and wherever you want.
 
@@ -52,6 +51,7 @@ It is not mandatory although, to have a grinder, you can easily save the data fr
 if that is what is needed for that specific data source.
 
 ## Configuration
+
 ```
 {:api-server #profile {:default {:port 8181}
                        :staging {:port 8181}
@@ -161,7 +161,8 @@ the respective vector inside the configuration. Therefor we will end up with:
 
 each type has common arguments with all other steps, as well as custom ones, that are only used in that specific step.
 
-NOTE: Splitters and demuxi were removed, and are now basically merged into every step. In order to split a value, an extra key
+NOTE: Splitters and demuxi were removed, and are now basically merged into every step. In order to split a value, an
+extra key
 needs to be addded to the step conf called `:step-conf` like so:
 
 ```
@@ -169,7 +170,6 @@ needs to be addded to the step conf called `:step-conf` like so:
 :step-conf {:group-size 50}
 ...
 ```
-
 
 ### Tx
 
@@ -211,41 +211,50 @@ The tx configuration usually can look like this:
 
 Each tx can have the following keys in its config:
 
-- `:clean-up-fn` -  a function that takes 2 arguments (this, which is meant for the step that is calling it, and tx which
+- `:clean-up-fn` - a function that takes 2 arguments (this, which is meant for the step that is calling it, and tx which
   is the transaction record that needs to be analysed);
-- `:fail-fast?` - this is the flag that decides if an exception was to occur, would we stop the entire processing pipeline
-  or not. For instance, if the entire system is dependent on a database, maybe it is better to gracefully stop it, than to
+- `:fail-fast?` - this is the flag that decides if an exception was to occur, would we stop the entire processing
+  pipeline
+  or not. For instance, if the entire system is dependent on a database, maybe it is better to gracefully stop it, than
+  to
   risk losing data.
-- `:retries` - this is used to set the number of retries we want to happen if something fails. If the step in question is \
+- `:retries` - this is used to set the number of retries we want to happen if something fails. If the step in question
+  is \
   dependent on an external system, and it fails the processing of the data, we might want to retry an x amount of times
   before we actually give up and execute the cleanup function.
 
 ## Thread type
 
 Since Sn0wSt0rm was updated to use JDK19 (until the next LTS is out), Virtual threads were added, and to use them in the
-thread pools that the framework uses, you just need to set the `:threads-type` to `:virtual`. If you want to use platform
+thread pools that the framework uses, you just need to set the `:threads-type` to `:virtual`. If you want to use
+platform
 threads, then set it to `:platform`. By default platform threads are used.
 
 ## Tx Manager
 
-Since the concept of transactions was introduced, we need a way to manage these transactions, so the tx-manager was introduced
+Since the concept of transactions was introduced, we need a way to manage these transactions, so the tx-manager was
+introduced
 as well. It is responsible for handling transactions operations (creating/deleting/etc).
 
-The tx-manager configuration is mandatory, although, if there isn't a tx-manager that is properly configured, it will try
+The tx-manager configuration is mandatory, although, if there isn't a tx-manager that is properly configured, it will
+try
 to default to in-memory managed type (:mem).
 
 The configuration that needs to be added to the steps configuration looks like the following:
 
 ```
 :tx-manager {:type :mem
-             :conf {:file "/Users/iceman/Desktop/transactions.edn"}}
+             :conf {:tx-file "/Users/iceman/Desktop/transactions.edn"}}
 ```
+
 It contains the following:
 
 `:type` - the type of manager to be used (currently only :mem is supported);
-`:conf` - contains the specific configuration for the transaction manager (in the case of the :mem type, we need a file location).
+`:conf` - contains the specific configuration for the transaction manager (in the case of the :mem type, we need a file
+location).
 
-When the transaction manager was introduced, it was done so to enable the serialization of current operations, i.e. to make sure
+When the transaction manager was introduced, it was done so to enable the serialization of current operations, i.e. to
+make sure
 that the `in-flight` data is not lost. To do so, we need to serialize the in-flight objects and flush them to disk, and,
 if present, load them back from disk, and continue processing when the service is restarted. For the :mem tx-manager,
 this translates to having a `:file` configuration, to know exactly where to save/load that data from.
@@ -265,22 +274,6 @@ Same as the tx-manager, it too only takes two configuration arguments:
 `:type` - the type of manager to be used (currently only :mem is supported);
 `:conf` - contains the specific configuration for the transaction manager;
 
-## Processing Type
-With the new ability to spit the processing of the pipeline between multiple machines, thanks to the Clojure Message Broker,
-we need a way to specify if we want a local only execution, or a distributed one. The processing type was then introduced,
-and depending on the choice made (local or distributed), this will have a direct impact on the way the queues are configured.
-
-For local execution we use:
-```
-:processing-type :local
-```
-
-For distributed:
-
-```
-:processing-type :distributed
-```
-
 ### Queue conf
 
 Depending on the processing type, the queues can have different configurations. If local, then the only configuration
@@ -288,12 +281,6 @@ possible is the buffer size:
 
 ```
 :queue-conf {:buffer-size 10}
-```
-
-If distributed, the brokers needs to be specified, so that it knows exactly how and where to connect to:
-```
-:queue-conf {:brokers [["clojure-message-broker" 8888]]
-             :buffer-size 10}
 ```
 
 ## Steps Configuration
@@ -310,6 +297,7 @@ Now we have a base configuration that can be used by every step, and it looks li
       :clean-up-fn (fn [a b] (clojure.tools.logging/info "Transaction cleaned!"))
       :retries 2}
  :connects-to ["tweet-interpreter"]
+ :split-conf {:group-size 50}
  :fns {:x-fn twitter-hashtag-counter.core/get-data
        :v-fn (fn [v])
        :sw-fn (fn [this name tx connects-to value])}
@@ -320,15 +308,22 @@ Now we have a base configuration that can be used by every step, and it looks li
 ```
 
 - `:name` - the name of the step;
-- `:await-termination-time` - when stopping the system, this is the time (ms) the step executor will wait for all tasks to finish,
-if this value is not provided, it will default to 1000 (ms).
-- `:editable` - whether the value that has failed to be processed by this step, is or not editable from the UI (defaults to false);
-- `:batch-size` - batch processing is now enabled in the system, set this value to a specific number to set the batch size. 
-No key added, will make the system default to single shard processing;
+- `:await-termination-time` - when stopping the system, this is the time (ms) the step executor will wait for all tasks
+  to finish,
+  if this value is not provided, it will default to 1000 (ms).
+- `:editable` - whether the value that has failed to be processed by this step, is or not editable from the UI (defaults
+  to false);
+- `:batch-size` - batch processing is now enabled in the system, set this value to a specific number to set the batch
+  size.
+  No key added, will make the system default to single shard processing;
+- `split-conf` - contains configuration for the case where the value outputted is a vector. This contains the size of
+  the group to generate, `:group-size`.
 - `tx` - the transactional configuration, it contains the following:
-    - `:fail-fast?` - whether  the system should be shutdown if an exception is detected while executing this step's function.
+    - `:fail-fast?` - whether the system should be shutdown if an exception is detected while executing this step's
+      function.
     - `:retries` - the number of times a failure should be retried before continuing on to the next execution.
-    - `clean-up-fn` - the function that will be executed once the transaction is finished. This can be a function to move a file,
+    - `clean-up-fn` - the function that will be executed once the transaction is finished. This can be a function to
+      move a file,
       to a different place, change the status of an object in the db, etc.
 
 - `:fns` - a map containing keys as function names and values as either function code, or function path. Like so:
@@ -340,11 +335,13 @@ No key added, will make the system default to single shard processing;
 ```
 
 In the case above, we have a transformation function that was declared somewhere else (`:x-fn`), a validation function
-that is declared directly in the config (`:v-fn`) and a switching function (`:sw-fn`) that decides where the output is directed
+that is declared directly in the config (`:v-fn`) and a switching function (`:sw-fn`) that decides where the output is
+directed
 depending on the value.
 
 - `:type` - this is used in case we have a predefined source type (an external library for instance) that was previously
-  implemented. If this is not present, then it will try to check if a custom function(x-fn) is present to use as a source;
+  implemented. If this is not present, then it will try to check if a custom function(x-fn) is present to use as a
+  source;
 - `:poll-frequency` - the poll frequency for the source. How long should it wait to run the source function again;
   Needs `time-unit`
 - `:time-unit` - the time unit to be used (m, s, ms, us, ns);
@@ -355,86 +352,110 @@ depending on the value.
 Each generic source has the following arguments:
 
 - `:name` - the name of the step;
-- `:conf` - Only present in the generic implementation of Source. Used to hold specific values used by the transformation function.
+- `:conf` - Only present in the generic implementation of Source. Used to hold specific values used by the
+  transformation function.
 - `:tx` - the transactional configuration, check above to see how to configure it.
-- `:connects-to` - this specifies a vector of steps where the output of this step's execution is directed. Each step should be specified as a string.
+- `:connects-to` - this specifies a vector of steps where the output of this step's execution is directed. Each step
+  should be specified as a string.
 - `:type` - this is used in case we have a predefined source type (an external library for instance) that was previously
-  implemented. If this is not present, then it will try to check if a custom function(x-fn) is present to use as a source;
+  implemented. If this is not present, then it will try to check if a custom function(x-fn) is present to use as a
+  source;
 - `:poll-frequency` - the poll frequency for the source. How long should it wait to run the source function again;
   Needs `time-unit`
 - `:time-unit` - the time unit to be used (m, s, ms, us, ns);
 - `:threads` - the number of threads used to run this source (default is 1);
 - `:fns` - as explained above, needs to be a map of key/function. The source, particularly needs `:x-fn` and `:v-fn`.
-  These are mandatory, the first one is the function that needs to be executed at the specified frequency, and should have an
-  arity of 2, first argument should be the thread number, and second one should be conf. The second one is the validation
-  function, and takes a single argument, conf and outputs a vector of validation messages, if the vector is empty, it means
-  that the configuration is valid.
+  These are mandatory, the first one is the function that needs to be executed at the specified frequency, and should
+  have an arity of 2, first argument should be the thread number, and second one should be conf. The second one is the
+  validation function, and takes a single argument, conf and outputs a vector of validation messages, if the vector is empty, it
+  means that the configuration is valid.
+- `:await-for-termination-time` - the time to wait for the threads started by this step to stop
+- `:editable` - st0rmwatch3r only, configures whether or not the values gathered by this step are editable in the ui or
+  not.
 
 ## Grinders Configuration
 
 Each generic Grinder has the following arguments
 
 - `:name` - the name of the step;
-- `:conf` - Only present in the generic implementation of Source. Used to hold specific values used by the transformation function.
+- `:conf` - Only present in the generic implementation of Source. Used to hold specific values used by the
+  transformation function.
 - `:tx` - the transactional configuration, check above to see how to configure it.
-- `:connects-to` - this specifies a vector of steps where the output of this step's execution is directed. Each step should be specified as a string.
+- `:connects-to` - this specifies a vector of steps where the output of this step's execution is directed. Each step
+  should be specified as a string.
 - `:type` - this is used in case we have a predefined source type (an external library for instance) that was previously
-  implemented. If this is not present, then it will try to check if a custom function(x-fn) is present to use as a source;
+  implemented. If this is not present, then it will try to check if a custom function(x-fn) is present to use as a
+  source;
 - `:poll-frequency` - the poll frequency for the source. How long should it wait to run the source function again;
   Needs `time-unit`
 - `:time-unit` - the time unit to be used (m, s, ms, us, ns);
 - `:threads` - the number of threads used to run this source (default is 1);
 - `:fns` - as explained above, needs to be a map of key/function. The source, particularly needs `:x-fn` and `:v-fn`.
-  These are mandatory, the first one is the function that needs to be executed at the specified frequency, and should have an
-  arity of 3, first argument should be the thread number, and second one should be conf and the last one should the value that
-  is going to be grinded.
-  The second one is the validation function, and takes a single argument, conf and outputs a vector of validation messages,
-  if the vector is empty, it means that the configuration is valid.
+  These are mandatory, the first one is the function that needs to be executed at the specified frequency, and should
+  have an arity of 3, first argument should be the thread number, and second one should be conf and the last one should the
+  value that is going to be grinded.
+  The second one is the validation function, and takes a single argument, conf and outputs a vector of validation
+  messages, if the vector is empty, it means that the configuration is valid.
+- `:await-for-termination-time` - the time to wait for the threads started by this step to stop
+- `:editable` - st0rmwatch3r only, configures whether the values gathered by this step are editable in the ui or
+  not.
 
 ## Enrichers Configuration
 
 Each generic Enricher has the following arguments
 
 - `:name` - the name of the step;
-- `:conf` - Only present in the generic implementation of Source. Used to hold specific values used by the transformation function.
+- `:conf` - Only present in the generic implementation of Source. Used to hold specific values used by the
+  transformation function.
 - `:tx` - the transactional configuration, check above to see how to configure it.
-- `:connects-to` - this specifies a vector of steps where the output of this step's execution is directed. Each step should be specified as a string.
+- `:connects-to` - this specifies a vector of steps where the output of this step's execution is directed. Each step
+  should be specified as a string.
 - `:type` - this is used in case we have a predefined source type (an external library for instance) that was previously
-  implemented. If this is not present, then it will try to check if a custom function(x-fn) is present to use as a source;
+  implemented. If this is not present, then it will try to check if a custom function(x-fn) is present to use as a
+  source;
 - `:poll-frequency` - the poll frequency for the source. How long should it wait to run the source function again;
   Needs `time-unit`
 - `:time-unit` - the time unit to be used (m, s, ms, us, ns);
 - `:cache-poll-frequency` - the pool frequency in milliseconds at which the cache is refreshed. Needs `:cache-time-unit`
 - `:cache-time-unit` - the time unit to be used by the cache (m, s, ms, us, ns);
 - `:threads` - the number of threads used to run this source (default is 1);
-- `:fns` - as explained above, needs to be a map of key/function. The source, particularly needs `:x-fn`, `:v-fn` and `c-fn`.
-  These are mandatory, the first one is the function that needs to be executed at the specified frequency, and should have an
-  arity of 4, first argument should be the thread number, and second one should be conf, the third one should the value that
-  is going to be enriched and finally the last one is the cache.
-  The second one is the validation function, and takes a single argument, conf and outputs a vector of validation messages,
-  if the vector is empty, it means that the configuration is valid.
-  The last function is the cache function, takes no arguments, and its output is meant to replace the current cache value.
+- `:fns` - as explained above, needs to be a map of key/function. The source, particularly needs `:x-fn`, `:v-fn`and `c-fn`.
+  These are mandatory, the first one is the function that needs to be executed at the specified frequency, and should
+  have an arity of 4, first argument should be the thread number, and second one should be conf, the third one should the value
+  that is going to be enriched and finally the last one is the cache.
+  The second one is the validation function, and takes a single argument, conf and outputs a vector of validation
+  messages, if the vector is empty, it means that the configuration is valid.
+  The last function is the cache function, takes no arguments, and its output is meant to replace the current cache
+  value.
+- `:await-for-termination-time` - the time to wait for the threads started by this step to stop
+- `:editable` - st0rmwatch3r only, configures whether the values gathered by this step are editable in the ui or not.
 
 ## Sinks Configuration
 
 Each generic Sink has the following arguments
 
 - `:name` - the name of the step;
-- `:conf` - Only present in the generic implementation of Source. Used to hold specific values used by the transformation function.
+- `:conf` - Only present in the generic implementation of Source. Used to hold specific values used by the
+  transformation function.
 - `:tx` - the transactional configuration, check above to see how to configure it.
-- `:connects-to` - this specifies a vector of steps where the output of this step's execution is directed. Each step should be specified as a string.
+- `:connects-to` - this specifies a vector of steps where the output of this step's execution is directed. Each step
+  should be specified as a string.
 - `:type` - this is used in case we have a predefined source type (an external library for instance) that was previously
-  implemented. If this is not present, then it will try to check if a custom function(x-fn) is present to use as a source;
+  implemented. If this is not present, then it will try to check if a custom function(x-fn) is present to use as a
+  source;
 - `:poll-frequency` - the poll frequency for the source. How long should it wait to run the source function again;
   Needs `time-unit`
 - `:time-unit` - the time unit to be used (m, s, ms, us, ns);
 - `:threads` - the number of threads used to run this source (default is 1);
 - `:fns` - as explained above, needs to be a map of key/function. The source, particularly needs `:x-fn` and `:v-fn`.
-  These are mandatory, the first one is the function that needs to be executed at the specified frequency, and should have an
-  arity of 3, first argument should be the thread number, and second one should be conf and the last one should the value that
-  is going to be sinked.
-  The second one is the validation function, and takes a single argument, conf and outputs a vector of validation messages,
-  if the vector is empty, it means that the configuration is valid.
+  These are mandatory, the first one is the function that needs to be executed at the specified frequency, and should
+  have an arity of 3, first argument should be the thread number, and second one should be conf and the last one should the
+  value that is going to be sinked.
+  The second one is the validation function, and takes a single argument, conf and outputs a vector of validation
+  messages, if the vector is empty, it means that the configuration is valid.
+- `:await-for-termination-time` - the time to wait for the threads started by this step to stop
+- `:editable` - st0rmwatch3r only, configures whether or not the values gathered by this step are editable in the ui or
+  not.
 
 ## Jobs Configuration
 
@@ -442,9 +463,163 @@ Each job has the following arguments
 
 - `:name` - the name of the step;
 - `:tx` - the transactional configuration, check above to see how to configure it.
-- `:connects-to` - this specifies a vector of steps where the output of this step's execution is directed. Each step should be specified as a string.
+- `:connects-to` - this specifies a vector of steps where the output of this step's execution is directed. Each step
+  should be specified as a string.
 - `:fns` - as explained above, needs to be a map of key/function. The source, particularly needs `:x-fn`.
   These are mandatory, the first one is the function that needs to be executed at the specified frequency,
   and it shouldn't have any arguments. This function is meant to generate events at a specified time, and output them
   to another step that will be responsible for executing the task.
-- `:schedule` -  a cron like string responsible for creating the execution behaviour of the job.
+- `:schedule` - a cron like string responsible for creating the execution behaviour of the job.
+
+# Configuration by steps type
+
+Above we can see all available configurations for the generic types, although `sn0wst0rm` contains specific types, that
+are pre implemented and allow developers to just use them instead of creating a new one every time they need to implement a
+new case.
+
+## Pre implemented sources
+
+### FileWatcherCustomSource
+
+This source is used to watch a specific directory, and load all files that are place in the folder into the designed
+pipeline.
+
+- `:name` - the name of the step;
+- `:conf` - Only present in the generic implementation of Source. Used to hold specific values used by the
+  transformation function.
+- `:tx` - the transactional configuration, check above to see how to configure it.
+- `:connects-to` - this specifies a vector of steps where the output of this step's execution is directed. Each step
+  should be specified as a string.
+- `:type` - this is used in case we have a predefined source type (an external library for instance) that was previously
+  implemented. If this is not present, then it will try to check if a custom function(x-fn) is present to use as a
+  source;
+- `:poll-frequency` - the poll frequency for the source. How long should it wait to run the source function again;
+  Needs `time-unit`
+- `:time-unit` - the time unit to be used (m, s, ms, us, ns);
+- `:threads` - the number of threads used to run this source (default is 1);
+- `:fns` - besides the possibility of adding `clean-up-fn` and `sw-fn`, there's a mandatory function called
+  `:file-filter-fn`. This function takes a single argument (arity of 1), and is used to filter the files detected by the
+  source,
+  so that the ones sent to the next step are the ones that actually matter.
+- `:file-batch-size` - the max number of files read everytime the source runs;
+- `:watch-dir` - configures the directory to watch.
+- `:await-for-termination-time` - the time to wait for the threads started by this step to stop
+- `:editable` - st0rmwatch3r only, configures whether the values gathered by this step are editable in the ui or not.
+
+### DatomicSource
+
+This source is used to retrieve data from a datomic database periodically, by executing the same query every time.
+
+- `:name` - the name of the step;
+- `:conf` - Only present in the generic implementation of Source. Used to hold specific values used by the
+  transformation function.
+- `:tx` - the transactional configuration, check above to see how to configure it.
+- `:connects-to` - this specifies a vector of steps where the output of this step's execution is directed. Each step
+  should be specified as a string.
+- `:type` - this is used in case we have a predefined source type (an external library for instance) that was previously
+  implemented. If this is not present, then it will try to check if a custom function(x-fn) is present to use as a
+  source;
+- `:poll-frequency` - the poll frequency for the source. How long should it wait to run the source function again;
+  Needs `time-unit`
+- `:time-unit` - the time unit to be used (m, s, ms, us, ns);
+- `:threads` - the number of threads used to run this source (default is 1);
+- `:fns` - besides the possibility of adding `clean-up-fn` and `sw-fn`, there is another function needed, `q-fn`.
+  This extra function is the one executed periodically, takes 2 arguments [conn query-args]. `conn` - the datomic
+  connection, `query-args` - the arguments needed for the query to run properly.
+- `:query-args` - a vector that contains all the arguments necessary to the query execution.
+- `:db-name` - contains the name of the db we are trying to connect to.
+- `:timeout` - a long value with the amount of time the connector will wait to establish a successful datomic connection.
+- `:db-cfg` - a map that contains the necessary elements to establish a datomic connection, like:
+```
+  {:server-type :peer-server
+   :access-key :env
+   :secret :env
+   :endpoint "sn0wf1eld.com:8999"
+   :validate-hostnames false}
+```
+
+- `:split-conf` - the splitting configuration for the output vector.
+- `:await-for-termination-time` - the time to wait for the threads started by this step to stop
+- `:editable` - st0rmwatch3r only, configures whether the values gathered by this step are editable in the ui or not.
+
+### MQTTSource
+
+This source is used to read from an mqtt queue. This source uses the `[clojurewerkz/machine_head]` library. The source needs
+to have a deserializer configured. These deserializers need to extend the protocol:
+
+`sn0wst0rm-core.protocols.protocols.AQMPDeserializer`
+
+- `:name` - the name of the step;
+- `:conf` - Only present in the generic implementation of Source. Used to hold specific values used by the
+  transformation function.
+- `:tx` - the transactional configuration, check above to see how to configure it.
+- `:connects-to` - this specifies a vector of steps where the output of this step's execution is directed. Each step
+  should be specified as a string.
+- `:type` - this is used in case we have a predefined source type (an external library for instance) that was previously
+  implemented. If this is not present, then it will try to check if a custom function(x-fn) is present to use as a
+  source;
+- `:poll-frequency` - the poll frequency for the source. How long should it wait to run the source function again;
+  Needs `time-unit`
+- `:time-unit` - the time unit to be used (m, s, ms, us, ns);
+- `:threads` - the number of threads used to run this source (default is 1);
+- `:fns` - takes`clean-up-fn` and `sw-fn`.
+- `:mqtt-source-topic` - the topic to read from;
+- `:mqtt-source-address` - the source address to connect to;
+- `:mqtt-source-qos` - the quality of service level (0,1,2);
+- `:mqtt-source-conn-optns` - the options needed according to the library used;
+- `:deserializer` - the deserializer class to deserialize the data received. By default, `sn0wst0rm-core.protocols.impl/->NippyDeserializer`
+is used. 
+- `:split-conf` - the splitting configuration for the output vector.
+- `:await-for-termination-time` - the time to wait for the threads started by this step to stop
+- `:editable` - st0rmwatch3r only, configures whether the values gathered by this step are editable in the ui or not.
+
+### RabbitMQSource
+
+This source is used to read from an mqtt queue. This source uses the `[com.novemberain/langohr]` library. The source needs
+to have a deserializer configured. These deserializers need to extend the protocol:
+
+`sn0wst0rm-core.protocols.protocols.AQMPDeserializer`
+
+There's extra configuration needed that is expressed as a map:
+
+- `q-conf` - the configuration of the queue:
+
+```
+{:qname "iacts.import.users"
+ :durable true
+ :exclusive false
+ :auto-delete false}
+```
+
+- `broker-conf` - the configuration of the broker:
+
+```
+{:host "172.20.0.11"
+ :port 5672}
+```
+
+- `:name` - the name of the step;
+- `:conf` - Only present in the generic implementation of Source. Used to hold specific values used by the
+  transformation function.
+- `:tx` - the transactional configuration, check above to see how to configure it.
+- `:connects-to` - this specifies a vector of steps where the output of this step's execution is directed. Each step
+  should be specified as a string.
+- `:type` - this is used in case we have a predefined source type (an external library for instance) that was previously
+  implemented. If this is not present, then it will try to check if a custom function(x-fn) is present to use as a
+  source;
+- `:poll-frequency` - the poll frequency for the source. How long should it wait to run the source function again;
+  Needs `time-unit`
+- `:time-unit` - the time unit to be used (m, s, ms, us, ns);
+- `:threads` - the number of threads used to run this source (default is 1);
+- `:fns` - takes`clean-up-fn` and `sw-fn`.
+- `:q-conf` - the queue configuration;
+- `:broker-conf` - the broker connection configuration;
+- `:auto-ack` - whether the read creates an auto acknowledgement;
+- `:exclusive` - whether the queue is exclusive to this consumer;
+- `:consumer-tag` - the name/tag of the consumer;
+- `:deserializer` - the deserializer class to deserialize the data received. By default, `sn0wst0rm-core.protocols.impl/->NippyDeserializer`is used.
+- `:split-conf` - the splitting configuration for the output vector.
+- `:await-for-termination-time` - the time to wait for the threads started by this step to stop
+- `:editable` - st0rmwatch3r only, configures whether the values gathered by this step are editable in the ui or not.
+
+### 
