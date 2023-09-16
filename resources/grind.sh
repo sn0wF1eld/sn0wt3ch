@@ -32,7 +32,7 @@ fi
 if [ ! -z "$library" ]
 then
   cp  $library $BASEDIR/extra-library.jar
-  java --enable-preview "-XX:+Use"$gc"GC" "-Xmx$maxHeap" "-Xms$minHeap" -cp sn0wst0rm-standalone.jar:extra-library.jar sn0wst0rm.core
+  java --enable-preview "-XX:+Use"$gc"GC" "-Xmx$maxHeap" "-Xms$minHeap" -XX:+ExitOnOutOfMemoryError -cp sn0wst0rm-standalone.jar:extra-library.jar sn0wst0rm.core
 else
-  java --enable-preview "-XX:+Use"$gc"GC" "-Xmx$maxHeap" "-Xms$minHeap" -cp sn0wst0rm-standalone.jar sn0wst0rm.core
+  java --enable-preview "-XX:+Use"$gc"GC" "-Xmx$maxHeap" "-Xms$minHeap" -XX:+ExitOnOutOfMemoryError -jar sn0wst0rm-standalone.jar
 fi
