@@ -116,6 +116,20 @@ The last button is the `gear` button, this button allows you to see the configur
 
 ![Alt text](../screens/10.png "Optional title")
 
+### Channels
+
+If instead of clicking in a step, we click on the edge linking it, we get something like
+
+![Alt text](../screens/19.png "Optional title")
+
+In here we can get details on how long on `average` it takes to put/take to the channel that interconnects the steps.
+
+We also get some information on how many values were passed to, read from the channel.
+
+Finally we can actually set the buffer size, by default the buffersize is set to 100, but we can modify the channel through the ui.
+
+![Alt text](../screens/20.png "Optional title")
+
 ### Jobs
 
 Jobs are the ones that have a light blue background color. These differ from all other steps, as they are configured in a different way.
