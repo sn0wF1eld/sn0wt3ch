@@ -210,4 +210,4 @@ This tutorial is meant to help with using `St0rmWatch3r`. This will be constantl
 issues here and there, or even missing examples. If you find that something is not correctly explained, or there's something
 missing, please let me know.
 
-[Welcome](../)
+[Welcome](.)
