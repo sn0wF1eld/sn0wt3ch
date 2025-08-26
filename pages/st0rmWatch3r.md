@@ -5,6 +5,10 @@ handling.
 
 It can be used to monitor the performance of the application as well as the JVM statistics regarding memory and cpu usage.
 
+If you just want to test it, check it out at this address:
+
+https://st0rm-watch3r.sn0wf1eld.com/
+
 ## Setting up a connection
 
 To setup a connection, open the main landing page for St0rmWatch3r, and you will find a screen like this:
