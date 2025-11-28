@@ -822,6 +822,43 @@ There's extra configuration needed that is expressed as a map:
 Refer to Langhor documentation, for extra properties, etc that you can use in message conf and other specific configurations.
 Github link - https://github.com/michaelklishin/langohr
 
+### KafkaSource
+
+This source is used to read from a kafka topic. This source uses the `[com.oscaro/felic]` library.
+
+- `:conf` - the configuration of the broker. 
+
+The base of the configuration is set by:
+
+```
+{:bootstrap.servers "localhost:29092"
+ :key.deserializer    :string
+ :value.deserializer :nippy+fast
+ :enable.auto.commit true
+ :topics #{"topic1"}}
+```
+
+Refer to Felice documentation, for extra properties, etc that you can use in message conf and other specific configurations.
+Github link - https://github.com/oscaro/felice
+
+- `:name` - the name of the step;
+- `:conf` - Holds the kafka config, check the above url for more config details.
+- `:error-conf` - the configuration map used by the error function. Optional as you might not be interested to do
+  anything with the error itself besides having it logged to the file;
+- `:tx` - the transactional configuration, check above to see how to configure it.
+- `:connects-to` - this specifies a vector of steps where the output of this step's execution is directed. Each step
+  should be specified as a string.
+- `:type` - set to `sn0wst0rm-core.protocols.protocols.KafkaSource`
+- `:poll-frequency` - the poll frequency for the source. How long should it wait to run the source function again;
+  Needs `time-unit`
+- `:time-unit` - the time unit to be used (m, s, ms, us, ns);
+- `:threads` - the number of threads used to run this source (default is 1);
+- `:fns` - does not have an `x-fn`. All other functions can be used, besides `:forward-fn` which can only be used by sinks.
+- `:split-conf` - the splitting configuration for the output vector.
+- `:await-for-termination-time` - the time to wait for the threads started by this step to stop
+- `:keep-meta` - whether the metadata should be kept on the processed value;
+- `:editable` - St0rmwatch3r only, configures whether the values gathered by this step are editable in the ui or not.
+
 ## Pre implemented grinders
 
 ### FilePartitionerGrinder
@@ -1071,7 +1108,7 @@ certain methods.
 - `:tx` - the transactional configuration, check above to see how to configure it.
 - `:connects-to` - this specifies a vector of steps where the output of this step's execution is directed. Each step
   should be specified as a string.
-- `:type` - set to `sn0wst0rm-core.protocols.protocols.DatomicEnricher`
+- `:type` - set to `sn0wst0rm-core.protocols.protocols.RabbitMQSink`
 - `:poll-frequency` - the poll frequency for the source. How long should it wait to run the source function again;
   Needs `time-unit`
 - `:time-unit` - the time unit to be used (m, s, ms, us, ns);
@@ -1112,10 +1149,49 @@ Github link - https://github.com/michaelklishin/langohr
 NOTE: any `x-fn` function used in a sink, should never return the result of the `x-fn` function if the last statement
 in that function, returns an object or a set of objects that are not serializable.
 
+### KafkaSink
+
+This sink is used to output messages to Kafka. Kafka specialized steps, use felice as the library to be able to
+connect to the kafka server. Refer to the project's documentation in order to know specific properties to use in
+certain methods.
+
+- `:name` - the name of the step;
+- `:conf` - Contains the kafka connection settings. Example:
+
+``` 
+{:bootstrap.servers "localhost:29092"
+ :key.serializer :string
+ :value.serializer :nippy+fast
+ :close.timeout.ms 9223372036854775807}
+```
+
+- `:error-conf` - the configuration map used by the error function. Optional as you might not be interested to do
+  anything with the error itself besides having it logged to the file;
+- `:tx` - the transactional configuration, check above to see how to configure it.
+- `:connects-to` - this specifies a vector of steps where the output of this step's execution is directed. Each step
+  should be specified as a string.
+- `:type` - set to `sn0wst0rm-core.protocols.protocols.KafkaSink`
+- `:poll-frequency` - the poll frequency for the source. How long should it wait to run the source function again;
+  Needs `time-unit`
+- `:time-unit` - the time unit to be used (m, s, ms, us, ns);
+- `:threads` - the number of threads used to run this source (default is 1);
+- `:fns` - as explained above, needs to be a map of key/function. The source doesn't have an `x-fn`. All other functions can be used.
+- `:timeout` - a long value with the amount of time the connector will wait to establish a successful datomic connection.
+- `:broker-conf` - the configuration to connect to the rabbitmq server. Example:
+- `:split-conf` - the splitting configuration for the output vector.
+- `:await-for-termination-time` - the time to wait for the threads started by this step to stop
+- `:keep-meta` - whether the metadata should be kept on the processed value;
+- `:editable` - St0rmwatch3r only, configures whether the values gathered by this step are editable in the ui or not.
+- `:return-xfn-res?` - Whether the result of the sink `x-fn` function should be used for post processing. If set to `false`,
+  the input of the sink will be used, if set to `true` the result of the sink function will be used.
+  By default, the value is set to false.
+
+Refer to Felice documentation, for extra properties, etc that you can use in message conf and other specific configurations.
+Github link -  https://github.com/oscaro/felice
+
 ### EmailSink
 
 This sink is used to send emails.
-
 
 editable keep-meta conf error-conf return-xfn-res?
 
@@ -1175,7 +1251,6 @@ The base library used for this sink, is `postal` - https://github.com/drewr/post
 
 NOTE: any `x-fn` function used in a sink, should never return the result of the `x-fn` function if the last statement
 in that function, returns an object or a set of objects that are not serializable.
-
 
 ## Error Sink
 
